@@ -1,4 +1,4 @@
-<canvas></canvas>
+<canvas class='am-canvas'></canvas>
 
 <style>
   canvas {
@@ -19,9 +19,9 @@
 </style>
 
 <script>
-  import { $ } from '@/utils/functions';
-
-  const $canvas = $<HTMLCanvasElement>('canvas');
+  const $ = <T extends Element = HTMLElement>(el: string): T =>
+    document.querySelector<T>(el) as T;
+  const $canvas = $<HTMLCanvasElement>('.am-canvas');
   const ctx = $canvas.getContext('2d') as CanvasRenderingContext2D;
   let widthCanvas = ($canvas.width = window.innerWidth);
   let heightCanvas = ($canvas.height = window.innerHeight);
@@ -75,7 +75,7 @@
         this.letterFontSize =
           this.originalFontSize + this.maxFontSize * easeOutQuint(progress);
       } else {
-        let returnProgress = 1 - Math.min(distance / (mouse.range * 2), 1); 
+        let returnProgress = 1 - Math.min(distance / (mouse.range * 2), 1);
         this.letterFontSize =
           this.originalFontSize +
           (this.letterFontSize - this.originalFontSize) *
