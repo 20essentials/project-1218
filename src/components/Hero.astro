@@ -1,0 +1,136 @@
+<canvas></canvas>
+
+<style>
+  canvas {
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+    background: radial-gradient(
+        circle at top right,
+        hsl(250 100% 85%),
+        hsl(250 100% 85% / 0%)
+      ),
+      radial-gradient(
+        circle at bottom left,
+        hsl(220 90% 75%),
+        hsl(220 90% 75% / 0%)
+      );
+  }
+</style>
+
+<script>
+  import { $ } from '@/utils/functions';
+
+  const $canvas = $<HTMLCanvasElement>('canvas');
+  const ctx = $canvas.getContext('2d') as CanvasRenderingContext2D;
+  let widthCanvas = ($canvas.width = window.innerWidth);
+  let heightCanvas = ($canvas.height = window.innerHeight);
+  let letterOffset = 44;
+  let letterFontSize = 18;
+  let mouse: { x?: number; y?: number; range: number } = {
+    x: 0,
+    y: 0,
+    range: 222
+  };
+
+  class Letter {
+    x: number;
+    y: number;
+    letterFontSize: number;
+    originalFontSize: number;
+    maxFontSize: number;
+    charCode: number;
+    increaseFontSize: number;
+
+    constructor(x: number, y: number) {
+      this.x = x;
+      this.y = y;
+      this.letterFontSize = letterFontSize;
+      this.maxFontSize = letterFontSize * 2;
+      this.originalFontSize = letterFontSize;
+      this.increaseFontSize = 0.05;
+      this.charCode = 65 + Math.floor(Math.random() * 26);
+    }
+
+    draw() {
+      ctx.fillStyle = 'white';
+      ctx.font = `${this.letterFontSize}px monospace`;
+      ctx.fillText(String.fromCharCode(this.charCode), this.x, this.y);
+    }
+
+    update() {
+      if (mouse.x === undefined || mouse.y === undefined) {
+        this.letterFontSize = Math.max(
+          this.letterFontSize - this.increaseFontSize,
+          this.originalFontSize
+        );
+        return;
+      }
+      let dx = mouse.x - this.x;
+      let dy = mouse.y - this.y;
+      let distance = Math.sqrt(dx * dx + dy * dy);
+      let progress = 1 - distance / mouse.range;
+
+      if (distance < mouse.range) {
+        this.letterFontSize =
+          this.originalFontSize + this.maxFontSize * easeOutQuint(progress);
+      } else {
+        let returnProgress = 1 - Math.min(distance / (mouse.range * 2), 1); 
+        this.letterFontSize =
+          this.originalFontSize +
+          (this.letterFontSize - this.originalFontSize) *
+            easeOutQuint(returnProgress);
+      }
+    }
+  }
+
+  let letters: Letter[] = [];
+
+  function easeOutQuint(x: number): number {
+    return 1 - Math.pow(1 - x, 5);
+  }
+
+  function reset() {
+    widthCanvas = $canvas.width = window.innerWidth;
+    heightCanvas = $canvas.height = window.innerHeight;
+    letters = [];
+    for (
+      let y = letterFontSize / 2 + letterOffset / 2;
+      y <= heightCanvas;
+      y += letterOffset
+    ) {
+      for (let x = letterFontSize / 2; x <= widthCanvas; x += letterOffset) {
+        letters.push(new Letter(x, y));
+      }
+    }
+  }
+
+  function drawCanvas() {
+    ctx.clearRect(0, 0, widthCanvas, heightCanvas);
+    letters.forEach(letter => {
+      letter.draw();
+      letter.update();
+    });
+    requestAnimationFrame(drawCanvas);
+  }
+
+  function mouseMove(event: MouseEvent | TouchEvent) {
+    const { clientX, clientY } =
+      event instanceof TouchEvent ? event.touches[0] : event;
+    mouse.x = clientX;
+    mouse.y = clientY;
+  }
+
+  function mouseOut() {
+    mouse.x = undefined;
+    mouse.y = undefined;
+  }
+
+  drawCanvas();
+  reset();
+  window.addEventListener('mousemove', mouseMove);
+  window.addEventListener('touchmove', mouseMove);
+  window.addEventListener('mouseout', mouseOut);
+  window.addEventListener('touchend', mouseOut);
+  window.addEventListener('resize', reset);
+</script>
